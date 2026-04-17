@@ -168,7 +168,7 @@ def screenshot(path="/tmp/shot.png", full=False):
 
 
 # --- tabs ---
-def list_tabs(include_chrome=False):
+def list_tabs(include_chrome=True):
     out = []
     for t in cdp("Target.getTargets")["targetInfos"]:
         if t["type"] != "page": continue
@@ -193,7 +193,7 @@ def new_tab(url="about:blank"):
 
 def ensure_real_tab():
     """Switch to a real user tab if current is chrome:// / internal / stale."""
-    tabs = list_tabs()
+    tabs = list_tabs(include_chrome=False)
     if not tabs:
         return None
     try:
