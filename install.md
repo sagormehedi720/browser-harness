@@ -52,6 +52,8 @@ print(page_info())
 PY
 ```
 
+   Reuse an existing healthy daemon if it is already responding. Do not kill it during setup unless the attach is clearly stale and you are confident no other agent is using the same `BU_NAME`. For parallel agents, use distinct `BU_NAME`s so they do not fight over the same default session.
+
 3. If that fails and Chrome is already running, open `chrome://inspect/#remote-debugging` in the existing Chrome profile instead of launching a fresh Chrome process.
    On macOS:
 
