@@ -80,7 +80,17 @@ def scrape_video(video_id):
 
     # ---- ytInitialPlayerResponse ----
     m = re.search(r'var ytInitialPlayerResponse = (\{.*?\});(?:var|</script>)', html, re.DOTALL)
+    if not m:
+        raise ValueError(f"ytInitialPlayerResponse not found for video {video_id} — video may be private, deleted, or region-blocked")
     pr = json.loads(m.group(1))
+
+    # Check playability before parsing
+    status = pr.get("playabilityStatus", {}).get("status")
+    if status == "LOGIN_REQUIRED":
+        raise ValueError(f"Video {video_id} is age-restricted or login-gated (playabilityStatus: LOGIN_REQUIRED)")
+    if status == "ERROR":
+        reason = pr.get("playabilityStatus", {}).get("reason", "unknown")
+        raise ValueError(f"Video {video_id} is unavailable: {reason}")
 
     vd  = pr["videoDetails"]
     mf  = pr["microformat"]["playerMicroformatRenderer"]
@@ -205,7 +215,7 @@ def youtube_search(query, max_results=20):
                 "thumbnail":  f"https://i.ytimg.com/vi/{vr['videoId']}/hqdefault.jpg",
             })
             if len(results) >= max_results:
-                break
+                return results  # exit both loops immediately
     return results
 
 results = youtube_search("python tutorial", max_results=5)
