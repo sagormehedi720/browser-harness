@@ -178,8 +178,14 @@ def wait_for_load(timeout=15.0):
     return False
 
 def js(expression, target_id=None):
-    """Run JS in the attached tab (default) or inside an iframe target (via iframe_target())."""
+    """Run JS in the attached tab (default) or inside an iframe target (via iframe_target()).
+
+    Expressions with top-level `return` are automatically wrapped in an IIFE, so both
+    `document.title` and `const x = 1; return x` are valid inputs.
+    """
     sid = cdp("Target.attachToTarget", targetId=target_id, flatten=True)["sessionId"] if target_id else None
+    if "return " in expression:
+        expression = f"(function(){{{expression}}})()"
     r = cdp("Runtime.evaluate", session_id=sid, expression=expression, returnByValue=True, awaitPromise=True)
     return r.get("result", {}).get("value")
 
