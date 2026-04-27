@@ -62,6 +62,19 @@ def log(msg):
 def get_ws_url():
     if url := os.environ.get("BU_CDP_WS"):
         return url
+    if url := os.environ.get("BU_CDP_URL"):
+        # HTTP DevTools endpoint (e.g. http://127.0.0.1:9333) — resolve to ws via /json/version.
+        # Use this for a dedicated automation Chrome on a non-default profile, which avoids the
+        # M144 "Allow remote debugging" dialog and the M136 default-profile lockdown.
+        deadline = time.time() + 30
+        last_err = None
+        while time.time() < deadline:
+            try:
+                return json.loads(urllib.request.urlopen(f"{url}/json/version", timeout=5).read())["webSocketDebuggerUrl"]
+            except Exception as e:
+                last_err = e
+                time.sleep(1)
+        raise RuntimeError(f"BU_CDP_URL={url} unreachable after 30s: {last_err} -- is the dedicated automation Chrome running?")
     for base in PROFILES:
         try:
             port, path = (base / "DevToolsActivePort").read_text().strip().split("\n", 1)
