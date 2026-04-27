@@ -61,6 +61,8 @@ def main():
         args = args[1:]
     if not args or args[0] != "-c":
         sys.exit("Usage: browser-harness -c \"print(page_info())\"")
+    if len(args) < 2:
+        sys.exit("Usage: browser-harness -c \"print(page_info())\"")
     print_update_banner()
     ensure_daemon()
     exec(args[1], globals())
