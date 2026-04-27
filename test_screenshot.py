@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 import tempfile
 from unittest.mock import patch
 
@@ -14,28 +15,21 @@ def _fake_png(width, height):
     return base64.b64encode(buf.getvalue()).decode()
 
 
-def test_max_dim_downsizes_oversized_image():
-    fake = lambda method, **kwargs: {"data": _fake_png(4592, 2286)}
-    with patch("helpers.cdp", side_effect=fake), tempfile.NamedTemporaryFile(suffix=".png") as f:
-        helpers.capture_screenshot(f.name, max_dim=1800)
-        w, h = Image.open(f.name).size
+def _run(width, height, **kwargs):
+    fake = lambda method, **_: {"data": _fake_png(width, height)}
+    with patch("helpers.cdp", side_effect=fake), tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, "shot.png")
+        helpers.capture_screenshot(path, **kwargs)
+        return Image.open(path).size
 
-    assert max(w, h) == 1800
+
+def test_max_dim_downsizes_oversized_image():
+    assert max(_run(4592, 2286, max_dim=1800)) == 1800
 
 
 def test_max_dim_skips_when_image_already_small():
-    fake = lambda method, **kwargs: {"data": _fake_png(800, 400)}
-    with patch("helpers.cdp", side_effect=fake), tempfile.NamedTemporaryFile(suffix=".png") as f:
-        helpers.capture_screenshot(f.name, max_dim=1800)
-        w, h = Image.open(f.name).size
-
-    assert (w, h) == (800, 400)
+    assert _run(800, 400, max_dim=1800) == (800, 400)
 
 
 def test_max_dim_default_is_no_resize():
-    fake = lambda method, **kwargs: {"data": _fake_png(4592, 2286)}
-    with patch("helpers.cdp", side_effect=fake), tempfile.NamedTemporaryFile(suffix=".png") as f:
-        helpers.capture_screenshot(f.name)
-        w, h = Image.open(f.name).size
-
-    assert (w, h) == (4592, 2286)
+    assert _run(4592, 2286) == (4592, 2286)
