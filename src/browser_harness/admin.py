@@ -221,12 +221,12 @@ def restart_daemon(name=None):
             try:
                 os.kill(pid, 0)
                 time.sleep(0.2)
-            except (ProcessLookupError, OSError):
+            except (ProcessLookupError, OSError, SystemError):
                 break
         else:
             try:
                 os.kill(pid, signal.SIGTERM)
-            except (ProcessLookupError, OSError):
+            except (ProcessLookupError, OSError, SystemError):
                 pass
     ipc.cleanup_endpoint(name or NAME)
     try:
